@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinanceTrack">
+<meta name="theme-color" content="#1D1C3B">
+<title>FinanceTrack</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0e1e;--surface:#1a1929;--surface2:#242338;--surface3:#2e2c47;
+  --accent:#C3986B;--text:#F0EEF8;--text2:#9B99B0;--text3:#6B6980;
+  --success:#2DD4BF;--danger:#F87171;--info:#818CF8;--warn:#FBBF24;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --radius:16px;--radius-sm:10px;--radius-xs:8px;
+  --font:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font)}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform 0.3s cubic-bezier(.4,0,.2,1),opacity 0.3s;overflow:hidden}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
+.header{padding:52px 20px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+.header .sub{font-size:12px;color:var(--text2);margin-top:2px}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+.bottom-nav{height:82px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:8px;flex-shrink:0}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;border:none;background:none;color:var(--text3);cursor:pointer;font-size:9px;font-family:var(--font);transition:color 0.2s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:20px;line-height:1}
+.add-circle{width:46px;height:46px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;margin-top:-22px;box-shadow:0 4px 20px rgba(195,152,107,0.4)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-sm{background:var(--surface2);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:8px}
+.month-total{text-align:center;padding:22px 16px;background:var(--surface);border-radius:var(--radius);margin-bottom:14px;border:1px solid var(--border)}
+.month-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.month-amount{font-size:38px;font-weight:700;letter-spacing:-1.5px}
+.month-sub{font-size:12px;color:var(--text2);margin-top:5px}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:10px}
+.month-nav button{background:var(--surface3);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer}
+.month-nav span{font-size:13px;font-weight:500;color:var(--text);min-width:110px;text-align:center}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center}
+.stat-val{font-size:18px;font-weight:700;margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--text2)}
+.cat-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.cat-item:last-child{border-bottom:none}
+.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.cat-name{font-size:13px;font-weight:500}
+.cat-pct{font-size:11px;color:var(--text2)}
+.cat-val{font-size:13px;font-weight:600}
+.cat-bar-wrap{width:100%;height:3px;background:var(--surface3);border-radius:4px;margin-top:3px}
+.cat-bar{height:3px;border-radius:4px;transition:width 0.6s ease}
+.tx-date{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:10px 0 5px;font-weight:600}
+.tx-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px}
+.tx-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tx-info{flex:1;min-width:0}
+.tx-desc{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:5px}
+.tx-pay-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:8px;font-size:10px;background:var(--surface3);color:var(--text2);white-space:nowrap}
+.tx-amount{font-size:14px;font-weight:700;color:var(--danger);white-space:nowrap}
+.tx-amount.income{color:var(--success)}
+.alert{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start}
+.alert.warn{background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25)}
+.alert-text{font-size:12px;color:var(--text);line-height:1.5}
+.btn{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:opacity 0.15s,transform 0.1s}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--surface3);color:var(--text)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text)}
+.btn-sm{padding:9px 14px;font-size:13px;width:auto}
+.input-group{margin-bottom:14px}
+.input-label{font-size:11px;color:var(--text2);margin-bottom:5px;display:block;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.input{width:100%;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.input:focus{border-color:var(--accent)}
+select.input option{background:var(--surface2)}
+.input-amount{font-size:26px;font-weight:700;text-align:center;letter-spacing:-0.5px;padding:18px}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative;overflow:hidden}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(195,152,107,0.05)}
+.upload-icon{font-size:36px;margin-bottom:10px;opacity:0.6}
+.upload-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.upload-sub{font-size:11px;color:var(--text2)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:100px}
+.processing{text-align:center;padding:28px 16px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tabs{display:flex;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;margin-bottom:14px}
+.tab{flex:1;padding:7px 4px;border-radius:7px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:var(--font)}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:4px}
+.section-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px}
+.see-all{font-size:12px;color:var(--accent);cursor:pointer}
+.empty{text-align:center;padding:40px 16px}
+.empty-icon{font-size:44px;margin-bottom:14px;opacity:0.35}
+.empty-title{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--text2)}
+.empty-sub{font-size:12px;color:var(--text3)}
+#camera-video{width:100%;border-radius:var(--radius);background:#000;display:block}
+#camera-canvas{display:none}
+.photo-preview{width:100%;border-radius:var(--radius);object-fit:cover;max-height:180px;display:none}
+.voice-center{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px}
+.mic-btn{width:84px;height:84px;border-radius:50%;border:none;background:var(--surface3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:36px;transition:all 0.2s;position:relative}
+.mic-btn.recording{background:rgba(248,113,113,0.18);animation:pulse-ring 1.2s ease-out infinite}
+.mic-btn.recording::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(248,113,113,0.4);animation:pulse-ring 1.2s ease-out infinite 0.3s}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.3);opacity:0}}
+.voice-label{margin-top:12px;font-size:13px;font-weight:500;color:var(--text2);text-align:center}
+.voice-transcript{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin:12px 0;font-size:13px;color:var(--text);line-height:1.6;min-height:50px;font-style:italic}
+.voice-example{background:var(--surface2);border-radius:var(--radius-xs);padding:9px 12px;font-size:11px;color:var(--text2);border-left:2px solid var(--accent);margin-bottom:7px}
+.drive-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:500}
+.drive-badge.connected{background:rgba(45,212,191,0.12);color:var(--success)}
+.drive-badge.disconnected{background:rgba(248,113,113,0.1);color:var(--danger)}
+.insight{background:linear-gradient(135deg,rgba(195,152,107,0.08),rgba(195,152,107,0.02));border:1px solid rgba(195,152,107,0.2);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.insight-title{font-size:11px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.insight-text{font-size:13px;color:var(--text);line-height:1.6}
+.onboard{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:28px}
+.onboard-logo{font-size:56px;margin-bottom:20px}
+.onboard h1{font-size:26px;font-weight:700;margin-bottom:10px;letter-spacing:-0.5px;text-align:center}
+.onboard p{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:28px;text-align:center}
+.feature-list{width:100%;margin-bottom:28px}
+.feature-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border)}
+.feature-row:last-child{border:none}
+.feature-icon{font-size:20px;width:32px;text-align:center}
+.feature-text{font-size:13px;color:var(--text2)}
+/* PAYMENT METHOD PILL */
+.pay-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all 0.15s;white-space:nowrap;margin:0 5px 6px 0}
+.pay-pill.selected{background:rgba(195,152,107,0.15);border-color:var(--accent);color:var(--accent)}
+/* CARD MANAGEMENT */
+.wallet-card{background:var(--surface2);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;border:1px solid var(--border)}
+.wallet-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.wallet-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.wallet-card-name{font-size:14px;font-weight:600}
+.wallet-card-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.limit-bar-wrap{width:100%;height:5px;background:var(--surface3);border-radius:4px}
+.limit-bar{height:5px;border-radius:4px}
+.limit-info{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:5px}
+.limit-pct{font-size:11px;font-weight:600}
+/* TOAST */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:22px;font-size:13px;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ONBOARDING -->
+<div class="screen" id="screen-onboard">
+  <div class="onboard">
+    <div class="onboard-logo">💰</div>
+    <h1>FinanceTrack</h1>
+    <p>Controle seus gastos com IA. Fotografe extratos, cupons e faturas — categorização automática.</p>
+    <div class="feature-list">
+      <div class="feature-row"><span class="feature-icon">📸</span><span class="feature-text">Leitura de documentos por câmera ou upload</span></div>
+      <div class="feature-row"><span class="feature-icon">🎤</span><span class="feature-text">Entrada por comando de voz</span></div>
+      <div class="feature-row"><span class="feature-icon">💳</span><span class="feature-text">Controle por forma de pagamento e cartão</span></div>
+      <div class="feature-row"><span class="feature-icon">📊</span><span class="feature-text">Gráficos e detecção de padrões mensais</span></div>
+      <div class="feature-row"><span class="feature-icon">☁️</span><span class="feature-text">Sincronização com Google Drive</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="startApp()">Começar agora</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="showScreen('screen-settings')">Configurações</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen hidden" id="screen-home">
+  <div class="header">
+    <div class="header-row">
+      <div><h1>FinanceTrack</h1><div class="sub" id="drive-status-badge"></div></div>
+      <button class="back-btn" onclick="showScreen('screen-settings')">⚙️</button>
+    </div>
+  </div>
+  <div class="content" id="home-content"></div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="showScreen('screen-home')"><span class="nav-icon">🏠</span>Início</button>
+    <button class="nav-btn" onclick="showScreen('screen-transactions')"><span class="nav-icon">📋</span>Gastos</button>
+    <button class="nav-btn" onclick="showScreen('screen-add')"><div class="add-circle">+</div></button>
+    <button class="nav-btn" onclick="showScreen('screen-wallets')"><span class="nav-icon">💳</span>Carteiras</button>
+    <button class="nav-btn" onclick="showScreen('screen-charts')"><span class="nav-icon">📊</span>Gráficos</button>
+  </div>
+</div>
+
+<!-- ADD TRANSACTION -->
+<div class="screen hidden" id="screen-add">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+      <h1>Novo lançamento</h1>
+      <div style="width:36px"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab active" onclick="switchAddTab('doc')">📄 Doc</button>
+      <button class="tab" onclick="switchAddTab('camera')">📸 Câmera</button>
+      <button class="tab" onclick="switchAddTab('voice')">🎤 Voz</button>
+      <button class="tab" onclick="switchAddTab('manual')">✏️ Manual</button>
+    </div>
+
+    <!-- DOC -->
+    <div id="add-tab-doc">
+      <div class="upload-zone" id="upload-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <div class="upload-icon">📎</div>
+        <div class="upload-title">Soltar arquivo aqui</div>
+        <div class="upload-sub">Extrato, cupom fiscal, NF, fatura de cartão<br>PDF, imagem ou texto</div>
+        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.csv,.ofx" onchange="handleFileUpload(event)">
+      </div>
+      <div id="doc-result" style="display:none"></div>
+    </div>
+
+    <!-- CAMERA -->
+    <div id="add-tab-camera" style="display:none">
+      <video id="camera-video" autoplay playsinline></video>
+      <canvas id="camera-canvas"></canvas>
+      <img id="photo-preview" class="photo-preview">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-secondary" id="btn-start-cam" onclick="startCamera()">▶ Ligar câmera</button>
+        <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()" style="display:none">📸 Capturar</button>
+      </div>
+      <div id="camera-result" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <!-- VOICE -->
+    <div id="add-tab-voice" style="display:none">
+      <div class="voice-center">
+        <button class="mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
+        <div class="voice-label" id="voice-label">Toque para falar</div>
+      </div>
+      <div id="voice-transcript-wrap" style="display:none">
+        <div class="input-label">O que você disse</div>
+        <div class="voice-transcript" id="voice-transcript"></div>
+        <div id="voice-result"></div>
+      </div>
+      <div id="voice-hints">
+        <div class="input-label" style="margin-bottom:7px">Exemplos de comandos</div>
+        <div class="voice-example">"Gastei 89 reais no supermercado hoje no débito"</div>
+        <div class="voice-example">"Farmácia 47,50 ontem no cartão Nubank"</div>
+        <div class="voice-example">"Uber 22 reais no Pix, dia 15"</div>
+        <div class="voice-example">"Recebi 3000 de salário dia 5 via transferência"</div>
+      </div>
+    </div>
+
+    <!-- MANUAL -->
+    <div id="add-tab-manual" style="display:none">
+      <div class="input-group">
+        <label class="input-label">Valor (R$)</label>
+        <input class="input input-amount" type="number" id="manual-amount" placeholder="0,00" step="0.01" min="0">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Descrição</label>
+        <input class="input" type="text" id="manual-desc" placeholder="Ex: Supermercado Pão de Açúcar">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Data</label>
+        <input class="input" type="date" id="manual-date">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Categoria</label>
+        <select class="input" id="manual-cat">
+          <option value="">Selecionar categoria</option>
+          <option value="alimentacao">🍽️ Alimentação / Restaurantes</option>
+          <option value="saude">🏥 Saúde / Farmácia</option>
+          <option value="transporte">🚗 Transporte / Combustível</option>
+          <option value="moradia">🏠 Moradia / Condomínio</option>
+          <option value="lazer">🎉 Lazer / Viagens</option>
+          <option value="educacao">📚 Educação</option>
+          <option value="vestuario">👕 Vestuário</option>
+          <option value="investimentos">💹 Investimentos / Poupança</option>
+          <option value="outros">📦 Outros</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Forma de pagamento</label>
+        <select class="input" id="manual-payment" onchange="updateCardSelector('manual-card-group','manual-payment')">
+          <option value="">Selecionar</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="debito">🏦 Débito</option>
+          <option value="pix">⚡ Pix / Transferência</option>
+          <option value="dinheiro">💵 Dinheiro</option>
+          <option value="vale">🍽️ Vale Refeição/Alimentação</option>
+        </select>
+      </div>
+      <div class="input-group" id="manual-card-group" style="display:none">
+        <label class="input-label">Cartão</label>
+        <select class="input" id="manual-card">
+          <option value="">Selecionar cartão</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Tipo</label>
+        <div class="tabs" style="margin-bottom:0">
+          <button class="tab active" id="type-expense" onclick="setType('expense')">Gasto</button>
+          <button class="tab" id="type-income" onclick="setType('income')">Receita</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveManual()">Salvar lançamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSACTIONS -->
+<div class="screen hidden" id="screen-transactions">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+      <h1>Lançamentos</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div style="margin-top:10px">
+      <input class="input" type="text" placeholder="🔍 Buscar..." oninput="filterTransactions(this.value)" style="padding:10px 13px;font-size:13px">
+    </div>
+  </div>
+  <div class="content" id="tx-list-content"></div>
+</div>
+
+<!-- WALLETS -->
+<div class="screen hidden" id="screen-wallets">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+      <h1>Carteiras</h1>
+      <button class="back-btn" onclick="showScreen('screen-add-card')" style="font-size:20px">＋</button>
+    </div>
+  </div>
+  <div class="content" id="wallets-content"></div>
+</div>
+
+<!-- ADD CARD -->
+<div class="screen hidden" id="screen-add-card">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-wallets')">←</button>
+      <h1 id="add-card-title">Novo cartão</h1>
+      <div style="width:36px"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="input-group">
+      <label class="input-label">Nome do cartão</label>
+      <input class="input" type="text" id="card-name" placeholder="Ex: Nubank, Itaú Visa, Bradesco">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Tipo</label>
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab active" id="card-type-credit" onclick="setCardType('credito')">💳 Crédito</button>
+        <button class="tab" id="card-type-debit" onclick="setCardType('debito')">🏦 Débito</button>
+        <button class="tab" id="card-type-vale" onclick="setCardType('vale')">🍽️ Vale</button>
+      </div>
+    </div>
+    <div class="input-group" id="card-limit-group" style="margin-top:12px">
+      <label class="input-label">Limite (R$) — opcional</label>
+      <input class="input" type="number" id="card-limit" placeholder="Ex: 5000" step="100" min="0">
+    </div>
+    <div class="input-group" id="card-closing-group">
+      <label class="input-label">Dia de fechamento</label>
+      <input class="input" type="number" id="card-closing" placeholder="Ex: 20" min="1" max="31">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Cor / ícone</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px" id="card-color-picker">
+        <div class="pay-pill selected" data-color="#818CF8" onclick="selectCardColor(this,'#818CF8')">🟣 Roxo</div>
+        <div class="pay-pill" data-color="#F87171" onclick="selectCardColor(this,'#F87171')">🔴 Vermelho</div>
+        <div class="pay-pill" data-color="#34D399" onclick="selectCardColor(this,'#34D399')">🟢 Verde</div>
+        <div class="pay-pill" data-color="#FBBF24" onclick="selectCardColor(this,'#FBBF24')">🟡 Amarelo</div>
+        <div class="pay-pill" data-color="#60A5FA" onclick="selectCardColor(this,'#60A5FA')">🔵 Azul</div>
+        <div class="pay-pill" data-color="#F472B6" onclick="selectCardColor(this,'#F472B6')">🩷 Rosa</div>
+        <div class="pay-pill" data-color="#C3986B" onclick="selectCardColor(this,'#C3986B')">🟤 Dourado</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveCard()">Salvar cartão</button>
+    <button class="btn btn-secondary" id="btn-delete-card" onclick="deleteCard()" style="margin-top:8px;display:none;color:var(--danger)">🗑️ Excluir cartão</button>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="screen hidden" id="screen-charts">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+      <h1>Gráficos</h1>
+      <div style="width:36px"></div>
+    </div>
+  </div>
+  <div class="content" id="charts-content"></div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="screen hidden" id="screen-insights">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+      <h1>Insights</h1>
+      <div style="width:36px"></div>
+    </div>
+  </div>
+  <div class="content" id="insights-content">
+    <div class="processing" id="insights-loading" style="display:none">
+      <div class="spinner"></div>
+      <div style="font-size:13px;color:var(--text2)">Analisando seus gastos com IA...</div>
+    </div>
+    <div id="insights-list"></div>
+    <button class="btn btn-primary" onclick="generateInsights()">🤖 Gerar análise com IA</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen hidden" id="screen-settings">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" onclick="goBackFromSettings()">←</button>
+      <h1>Configurações</h1>
+      <div style="width:36px"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:10px">Google Drive</div>
+      <div id="drive-settings-status" style="margin-bottom:10px"></div>
+      <button class="btn btn-outline" id="btn-drive-connect" onclick="toggleDriveAuth()" style="margin-bottom:8px"></button>
+      <div style="font-size:11px;color:var(--text3);line-height:1.5">Dados salvos em arquivo JSON privado no seu Drive.</div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:10px">Chave API Anthropic</div>
+      <div class="input-group" style="margin-bottom:8px">
+        <input class="input" type="password" id="api-key-input" placeholder="sk-ant-...">
+      </div>
+      <button class="btn btn-secondary" onclick="saveApiKey()">Salvar chave</button>
+      <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px">Para leitura de documentos, voz e insights. Salva só no dispositivo.</div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:10px">Dados</div>
+      <button class="btn btn-outline" onclick="exportData()" style="margin-bottom:8px">📤 Exportar JSON</button>
+      <button class="btn btn-secondary" onclick="clearData()" style="color:var(--danger)">🗑️ Limpar todos os dados</button>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:6px">Sobre</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">FinanceTrack v2.0 · PWA com IA + Google Drive</div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'financetrack_v2';
+let state = {
+  transactions: [],
+  cards: [],
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+  apiKey: '',
+  driveConnected: false,
+  driveFileId: null,
+  hasOnboarded: false
+};
+
+const CATEGORIES = {
+  alimentacao: {label:'Alimentação',      icon:'🍽️', color:'#F87171'},
+  saude:       {label:'Saúde / Farmácia', icon:'🏥', color:'#34D399'},
+  transporte:  {label:'Transporte',       icon:'🚗', color:'#60A5FA'},
+  moradia:     {label:'Moradia',          icon:'🏠', color:'#A78BFA'},
+  lazer:       {label:'Lazer / Viagens',  icon:'🎉', color:'#FBBF24'},
+  educacao:    {label:'Educação',         icon:'📚', color:'#2DD4BF'},
+  vestuario:   {label:'Vestuário',        icon:'👕', color:'#F472B6'},
+  investimentos:{label:'Investimentos',   icon:'💹', color:'#86EFAC'},
+  outros:      {label:'Outros',           icon:'📦', color:'#9CA3AF'}
+};
+
+const PAYMENT_METHODS = {
+  credito:  {label:'Crédito',          icon:'💳'},
+  debito:   {label:'Débito',           icon:'🏦'},
+  pix:      {label:'Pix/Transferência',icon:'⚡'},
+  dinheiro: {label:'Dinheiro',         icon:'💵'},
+  vale:     {label:'Vale Ref./Alim.',  icon:'🍽️'}
+};
+
+let currentAddType = 'expense';
+let currentCardType = 'credito';
+let selectedCardColor = '#818CF8';
+let editingCardId = null;
+let cameraStream = null;
+let charts = {};
+
+// ── INIT ──
+function init() {
+  loadLocal();
+  if (state.hasOnboarded) { showScreen('screen-home'); renderHome(); updateDriveBadge(); }
+  else showScreen('screen-onboard');
+  document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+  updateSettingsUI();
+}
+
+function startApp() {
+  state.hasOnboarded = true;
+  saveLocal();
+  showScreen('screen-home');
+  renderHome();
+}
+
+// ── NAVIGATION ──
+let activeScreen = 'screen-onboard';
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (activeScreen === 'screen-add' && id !== 'screen-add') { stopCamera(); stopRecording(); }
+  activeScreen = id;
+  if (id === 'screen-home')         renderHome();
+  if (id === 'screen-transactions') renderTransactions();
+  if (id === 'screen-wallets')      renderWallets();
+  if (id === 'screen-charts')       renderCharts();
+  if (id === 'screen-insights')     renderInsightsList();
+  if (id === 'screen-settings')     updateSettingsUI();
+  if (id === 'screen-add')          refreshCardSelectors();
+  if (id === 'screen-add-card')     openAddCard();
+}
+
+function goBackFromSettings() {
+  showScreen(state.hasOnboarded ? 'screen-home' : 'screen-onboard');
+}
+
+// ── STORAGE ──
+function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadLocal() {
+  try { const d = localStorage.getItem(STORAGE_KEY); if (d) Object.assign(state, JSON.parse(d)); } catch(e){}
+  if (!state.cards) state.cards = [];
+}
+
+// ── TOAST ──
+function toast(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── ADD TAB SWITCHING ──
+function switchAddTab(tab) {
+  const tabs = ['doc','camera','voice','manual'];
+  document.querySelectorAll('#screen-add .tab').forEach((t,i) => t.classList.toggle('active', tabs[i]===tab));
+  tabs.forEach(t => document.getElementById('add-tab-'+t).style.display = t===tab?'block':'none');
+  if (tab !== 'camera') stopCamera();
+  if (tab !== 'voice')  stopRecording();
+}
+
+// ── PAYMENT / CARD SELECTOR ──
+function updateCardSelector(groupId, paymentSelectId) {
+  const method = document.getElementById(paymentSelectId).value;
+  const group = document.getElementById(groupId);
+  const cardSel = group ? group.querySelector('select') : null;
+  const showCards = (method === 'credito' || method === 'debito' || method === 'vale');
+  if (group) group.style.display = showCards ? 'block' : 'none';
+  if (cardSel) refreshCardSelectOptions(cardSel, method);
+}
+
+function refreshCardSelectOptions(sel, filterType) {
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Selecionar cartão (opcional)</option>';
+  const filtered = filterType
+    ? state.cards.filter(c => c.type === filterType)
+    : state.cards;
+  filtered.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id;
+    o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  if (prev) sel.value = prev;
+}
+
+function refreshCardSelectors() {
+  const manualSel = document.getElementById('manual-card');
+  if (manualSel) refreshCardSelectOptions(manualSel, null);
+}
+
+// ── MANUAL SAVE ──
+function setType(type) {
+  currentAddType = type;
+  document.getElementById('type-expense').classList.toggle('active', type==='expense');
+  document.getElementById('type-income').classList.toggle('active', type==='income');
+}
+
+function saveManual() {
+  const amount = parseFloat(document.getElementById('manual-amount').value);
+  const desc   = document.getElementById('manual-desc').value.trim();
+  const date   = document.getElementById('manual-date').value;
+  const cat    = document.getElementById('manual-cat').value;
+  const payment= document.getElementById('manual-payment').value;
+  const cardId = document.getElementById('manual-card').value;
+  if (!amount || amount <= 0) { toast('⚠️ Informe o valor'); return; }
+  if (!desc)    { toast('⚠️ Informe a descrição'); return; }
+  if (!date)    { toast('⚠️ Informe a data'); return; }
+  if (!cat)     { toast('⚠️ Selecione a categoria'); return; }
+  addTransaction({ amount, description:desc, date, category:cat, type:currentAddType, payment:payment||null, cardId:cardId||null, source:'manual' });
+  document.getElementById('manual-amount').value = '';
+  document.getElementById('manual-desc').value = '';
+  document.getElementById('manual-cat').value = '';
+  document.getElementById('manual-payment').value = '';
+  document.getElementById('manual-card-group').style.display = 'none';
+  toast('✅ Lançamento salvo!');
+  showScreen('screen-home');
+}
+
+function addTransaction(tx) {
+  tx.id = Date.now() + Math.random();
+  state.transactions.unshift(tx);
+  saveLocal(); syncToDrive();
+}
+
+function addTransactions(txs) {
+  txs.forEach(tx => { tx.id = Date.now() + Math.random(); state.transactions.unshift(tx); });
+  saveLocal(); syncToDrive();
+}
+
+// ── DOCUMENT UPLOAD ──
+async function handleFileUpload(e) { const f = e.target.files[0]; if(f) processDocument(f,'doc-result'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f = e.dataTransfer.files[0]; if(f) processDocument(f,'doc-result');
+}
+
+async function processDocument(file, resultId) {
+  const resultEl = document.getElementById(resultId);
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `<div class="processing"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Lendo documento com IA...</div></div>`;
+  if (!state.apiKey) { resultEl.innerHTML = noApiKeyHTML(); return; }
+  try {
+    let content;
+    const cardNames = state.cards.map(c=>c.name).join(', ');
+    const prompt = `Extraia TODOS os lançamentos financeiros deste documento. Para cada um retorne um JSON array com: {description, amount (number positivo), date (YYYY-MM-DD), category (alimentacao|saude|transporte|moradia|lazer|educacao|vestuario|investimentos|outros), type ("expense" ou "income"), payment (credito|debito|pix|dinheiro|vale ou null), cardName (nome do cartão se identificado dentre: ${cardNames||'nenhum cadastrado'}, ou null)}. Retorne SOMENTE o JSON array.`;
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      const b64 = await fileToBase64(file);
+      content = [{ type: file.type==='application/pdf'?'document':'image', source:{type:'base64',media_type:file.type,data:b64}},{ type:'text',text:prompt}];
+    } else {
+      const text = await file.text();
+      content = `${prompt}\n\nDocumento:\n${text.substring(0,8000)}`;
+    }
+    const data = await callClaude(content, 2000);
+    const m = data.content[0].text.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error('Nenhum lançamento encontrado');
+    const txs = JSON.parse(m[0]);
+    renderExtractedTransactions(txs, resultEl);
+  } catch(e) {
+    resultEl.innerHTML = `<div class="alert"><span style="font-size:16px">❌</span><div class="alert-text">${e.message}</div></div>`;
+  }
+}
+
+function renderExtractedTransactions(txs, container) {
+  if (!txs || !txs.length) { container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum lançamento encontrado</div></div>`; return; }
+  const safe = JSON.stringify(txs).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+  let html = `<div style="margin-bottom:10px"><div class="section-title" style="margin-bottom:8px">Encontrados: ${txs.length} lançamentos</div>`;
+  txs.forEach(tx => {
+    const cat = CATEGORIES[tx.category]||CATEGORIES.outros;
+    const pay = tx.payment ? PAYMENT_METHODS[tx.payment] : null;
+    const cardName = tx.cardName ? matchCardByName(tx.cardName) : null;
+    html += `<div class="card-sm" style="display:flex;align-items:center;gap:9px">
+      <span style="font-size:20px">${cat.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.description}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">${cat.label}${pay?' · '+pay.icon+' '+pay.label:''}${cardName?' · '+cardName.name:''} · ${tx.date}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:${tx.type==='income'?'var(--success)':'var(--danger)'};white-space:nowrap">${tx.type==='income'?'+':'-'}R$${Number(tx.amount).toFixed(2)}</div>
+    </div>`;
+  });
+  html += `</div><button class="btn btn-primary" onclick='confirmExtracted(${safe})'>✅ Importar todos</button>`;
+  container.innerHTML = html;
+}
+
+function matchCardByName(name) {
+  if (!name) return null;
+  const n = name.toLowerCase();
+  return state.cards.find(c => c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase())) || null;
+}
+
+function confirmExtracted(txs) {
+  // Resolve cardName → cardId
+  txs.forEach(tx => {
+    if (tx.cardName) { const c = matchCardByName(tx.cardName); if(c) tx.cardId = c.id; }
+    delete tx.cardName;
+  });
+  addTransactions(txs);
+  toast(`✅ ${txs.length} lançamentos importados!`);
+  showScreen('screen-home');
+}
+
+function noApiKeyHTML() {
+  return `<div class="alert"><span style="font-size:16px">⚠️</span><div class="alert-text">Configure a chave API Anthropic nas Configurações.</div></div><button class="btn btn-outline" style="margin-top:8px" onclick="showScreen('screen-settings')">Ir para Configurações</button>`;
+}
+
+function fileToBase64(file) {
+  return new Promise((res,rej) => { const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); });
+}
+
+// ── CAMERA ──
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v = document.getElementById('camera-video');
+    v.srcObject = cameraStream; v.style.display='block';
+    document.getElementById('btn-start-cam').style.display='none';
+    document.getElementById('btn-capture').style.display='block';
+  } catch(e) { toast('❌ Câmera não disponível'); }
+}
+
+function capturePhoto() {
+  const v = document.getElementById('camera-video');
+  const c = document.getElementById('camera-canvas');
+  const p = document.getElementById('photo-preview');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const dataUrl = c.toDataURL('image/jpeg',0.85);
+  p.src=dataUrl; p.style.display='block'; v.style.display='none';
+  stopCamera();
+  document.getElementById('btn-capture').style.display='none';
+  document.getElementById('btn-start-cam').textContent='📷 Nova foto';
+  document.getElementById('btn-start-cam').style.display='block';
+  processPhotoBase64(dataUrl.split(',')[1], 'camera-result');
+}
+
+async function processPhotoBase64(b64, resultId) {
+  const el = document.getElementById(resultId);
+  el.style.display='block';
+  el.innerHTML=`<div class="processing"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Analisando com IA...</div></div>`;
+  if (!state.apiKey) { el.innerHTML=noApiKeyHTML(); return; }
+  try {
+    const cardNames = state.cards.map(c=>c.name).join(', ');
+    const data = await callClaude([
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+      {type:'text',text:`Extraia lançamentos desta imagem. JSON array: {description,amount,date(YYYY-MM-DD ou hoje),category(alimentacao|saude|transporte|moradia|lazer|educacao|vestuario|investimentos|outros),type("expense"|"income"),payment(credito|debito|pix|dinheiro|vale|null),cardName(dentre:${cardNames||'nenhum'},ou null)}. SÓ o JSON array.`}
+    ], 1200);
+    const m = data.content[0].text.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error('Nenhum lançamento encontrado');
+    renderExtractedTransactions(JSON.parse(m[0]), el);
+  } catch(e) {
+    el.innerHTML=`<div class="alert"><span style="font-size:16px">❌</span><div class="alert-text">${e.message}</div></div>`;
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+}
+
+// ── VOICE ──
+let recognition=null, isRecording=false;
+
+function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
+
+function startRecording() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if (!SR) { toast('⚠️ Reconhecimento de voz não suportado'); return; }
+  recognition = new SR();
+  recognition.lang='pt-BR'; recognition.continuous=false; recognition.interimResults=true;
+  const micBtn=document.getElementById('mic-btn'), label=document.getElementById('voice-label');
+  const hints=document.getElementById('voice-hints'), wrap=document.getElementById('voice-transcript-wrap');
+  const txEl=document.getElementById('voice-transcript'), resEl=document.getElementById('voice-result');
+  recognition.onstart=()=>{ isRecording=true; micBtn.classList.add('recording'); micBtn.textContent='⏹'; label.textContent='Ouvindo... fale agora'; hints.style.display='none'; wrap.style.display='block'; txEl.textContent='...'; resEl.innerHTML=''; };
+  recognition.onresult=(e)=>{ let interim='',final=''; for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript; e.results[i].isFinal?final+=t:interim+=t;} txEl.textContent=final||interim; };
+  recognition.onerror=(e)=>{ stopRecording(); const msgs={'not-allowed':'Permissão negada','no-speech':'Nenhuma fala detectada','network':'Erro de rede'}; toast('❌ '+(msgs[e.error]||'Erro no microfone')); };
+  recognition.onend=()=>{ isRecording=false; micBtn.classList.remove('recording'); micBtn.textContent='🎤'; const text=txEl.textContent; if(text&&text!=='...'){label.textContent='Analisando...'; parseVoiceCommand(text,resEl,label);}else{label.textContent='Toque para falar';} };
+  recognition.start();
+}
+
+function stopRecording() {
+  if(recognition){try{recognition.stop();}catch(e){} recognition=null;}
+  isRecording=false;
+  const m=document.getElementById('mic-btn'),l=document.getElementById('voice-label');
+  if(m){m.classList.remove('recording');m.textContent='🎤';}
+  if(l)l.textContent='Toque para falar';
+}
+
+async function parseVoiceCommand(text, resultEl, labelEl) {
+  if (!state.apiKey) { resultEl.innerHTML=noApiKeyHTML(); if(labelEl)labelEl.textContent='Toque para falar'; return; }
+  try {
+    const today=new Date().toISOString().split('T')[0];
+    const cardNames=state.cards.map(c=>c.name).join(', ');
+    const data=await callClaude(`Hoje é ${today}. Usuário falou: "${text}"\nExtraia o lançamento. JSON: {description,amount(number),date(YYYY-MM-DD),category(alimentacao|saude|transporte|morporte|moradia|lazer|educacao|vestuario|investimentos|outros),type("expense"|"income"),payment(credito|debito|pix|dinheiro|vale|null),cardName(dentre:${cardNames||'nenhum'},ou null)}. SÓ o JSON.`,400);
+    const m=data.content[0].text.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('Não entendi o comando');
+    const tx=JSON.parse(m[0]);
+    if(labelEl)labelEl.textContent='Confirme o lançamento';
+    renderVoiceConfirm(tx,resultEl);
+  } catch(e) {
+    if(labelEl)labelEl.textContent='Toque para tentar novamente';
+    resultEl.innerHTML=`<div class="alert"><span style="font-size:16px">❌</span><div class="alert-text">${e.message}</div></div>`;
+  }
+}
+
+function renderVoiceConfirm(tx, container) {
+  const cat=CATEGORIES[tx.category]||CATEGORIES.outros;
+  const pay=tx.payment?PAYMENT_METHODS[tx.payment]:null;
+  const card=tx.cardName?matchCardByName(tx.cardName):null;
+  const safe=JSON.stringify(tx).replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+  container.innerHTML=`<div class="card" style="border-color:rgba(195,152,107,0.3)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:44px;height:44px;border-radius:12px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:22px">${cat.icon}</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600">${tx.description}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${cat.label}${pay?' · '+pay.icon+' '+pay.label:''}${card?' · '+card.name:''} · ${tx.date}</div></div>
+    </div>
+    <div style="text-align:center;font-size:30px;font-weight:700;color:${tx.type==='income'?'var(--success)':'var(--danger)'};margin-bottom:14px">${tx.type==='income'?'+':'-'}R$ ${Number(tx.amount).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="retryVoice()">🔄 Refazer</button>
+      <button class="btn btn-primary" style="flex:1" onclick='confirmVoiceTx(${safe})'>✅ Confirmar</button>
+    </div>
+  </div>`;
+}
+
+function confirmVoiceTx(tx) {
+  if (tx.cardName) { const c=matchCardByName(tx.cardName); if(c)tx.cardId=c.id; delete tx.cardName; }
+  addTransaction(tx); toast('✅ Lançamento salvo!'); showScreen('screen-home');
+}
+
+function retryVoice() {
+  document.getElementById('voice-transcript').textContent='';
+  document.getElementById('voice-result').innerHTML='';
+  document.getElementById('voice-transcript-wrap').style.display='none';
+  document.getElementById('voice-hints').style.display='block';
+  document.getElementById('voice-label').textContent='Toque para falar';
+}
+
+// ── CLAUDE API ──
+async function callClaude(content, max_tokens=1000) {
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':state.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens,messages:[{role:'user',content}]})
+  });
+  const data=await resp.json();
+  if(data.error) throw new Error(data.error.message);
+  return data;
+}
+
+// ── CARD MANAGEMENT ──
+function setCardType(type) {
+  currentCardType=type;
+  ['credit','debit','vale'].forEach((t,i)=>document.getElementById('card-type-'+t).classList.toggle('active',['credito','debito','vale'][i]===type));
+  const isCredit = type==='credito';
+  document.getElementById('card-limit-group').style.display = isCredit?'block':'none';
+  document.getElementById('card-closing-group').style.display = isCredit?'block':'none';
+}
+
+function selectCardColor(el, color) {
+  selectedCardColor=color;
+  document.querySelectorAll('#card-color-picker .pay-pill').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function openAddCard(cardId) {
+  editingCardId = cardId||null;
+  document.getElementById('add-card-title').textContent = cardId?'Editar cartão':'Novo cartão';
+  document.getElementById('btn-delete-card').style.display = cardId?'block':'none';
+  if (cardId) {
+    const c=state.cards.find(x=>x.id===cardId);
+    if(c){
+      document.getElementById('card-name').value=c.name;
+      document.getElementById('card-limit').value=c.limit||'';
+      document.getElementById('card-closing').value=c.closingDay||'';
+      setCardType(c.type);
+      selectedCardColor=c.color||'#818CF8';
+      document.querySelectorAll('#card-color-picker .pay-pill').forEach(p=>{p.classList.toggle('selected',p.dataset.color===selectedCardColor);});
+    }
+  } else {
+    document.getElementById('card-name').value='';
+    document.getElementById('card-limit').value='';
+    document.getElementById('card-closing').value='';
+    setCardType('credito');
+    selectedCardColor='#818CF8';
+    document.querySelectorAll('#card-color-picker .pay-pill').forEach((p,i)=>p.classList.toggle('selected',i===0));
+  }
+}
+
+function saveCard() {
+  const name=document.getElementById('card-name').value.trim();
+  if(!name){toast('⚠️ Informe o nome do cartão');return;}
+  const card={
+    id: editingCardId||('card_'+Date.now()),
+    name, type:currentCardType,
+    limit: parseFloat(document.getElementById('card-limit').value)||null,
+    closingDay: parseInt(document.getElementById('card-closing').value)||null,
+    color: selectedCardColor
+  };
+  if(editingCardId){
+    const idx=state.cards.findIndex(c=>c.id===editingCardId);
+    if(idx>=0) state.cards[idx]=card;
+  } else {
+    state.cards.push(card);
+  }
+  saveLocal(); syncToDrive();
+  toast(editingCardId?'✅ Cartão atualizado!':'✅ Cartão adicionado!');
+  showScreen('screen-wallets');
+}
+
+function deleteCard() {
+  if(!confirm('Excluir este cartão? Os lançamentos associados não serão afetados.'))return;
+  state.cards=state.cards.filter(c=>c.id!==editingCardId);
+  saveLocal(); syncToDrive();
+  toast('🗑️ Cartão excluído');
+  showScreen('screen-wallets');
+}
+
+// ── WALLETS RENDER ──
+function renderWallets() {
+  const year=state.currentYear, month=state.currentMonth;
+  const monthTxs=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&d.getMonth()===month&&t.type!=='income';});
+  const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  let html=`<div style="margin-bottom:14px;font-size:12px;color:var(--text2)">${monthNames[month]} ${year}</div>`;
+
+  // Payment method breakdown
+  const payTotals={};
+  monthTxs.forEach(t=>{const k=t.payment||'outros';payTotals[k]=(payTotals[k]||0)+Number(t.amount);});
+  const totalPay=Object.values(payTotals).reduce((s,v)=>s+v,0);
+
+  if(totalPay>0){
+    html+=`<div class="card" style="margin-bottom:14px">
+      <div class="section-title" style="margin-bottom:12px">Por forma de pagamento</div>`;
+    const payOrder=['credito','debito','pix','dinheiro','vale'];
+    payOrder.forEach(k=>{
+      if(!payTotals[k])return;
+      const pm=PAYMENT_METHODS[k]||{label:k,icon:'💰'};
+      const pct=totalPay>0?(payTotals[k]/totalPay*100).toFixed(0):0;
+      html+=`<div class="cat-item">
+        <span style="font-size:18px">${pm.icon}</span>
+        <div style="flex:1"><div class="cat-name">${pm.label}</div>
+          <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%;background:var(--accent)"></div></div></div>
+        <div style="text-align:right"><div class="cat-val">R$ ${payTotals[k].toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="cat-pct">${pct}%</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Cards
+  if(state.cards.length===0){
+    html+=`<div class="empty"><div class="empty-icon">💳</div><div class="empty-title">Nenhum cartão cadastrado</div><div class="empty-sub">Toque + para adicionar</div></div>`;
+  } else {
+    html+=`<div class="section-title" style="margin-bottom:10px">Cartões e contas</div>`;
+    state.cards.forEach(card=>{
+      const spent=monthTxs.filter(t=>t.cardId===card.id).reduce((s,t)=>s+Number(t.amount),0);
+      const pct=card.limit?Math.min(spent/card.limit*100,100):null;
+      const barColor=pct>90?'var(--danger)':pct>70?'var(--warn)':card.color;
+      const typeLabel=PAYMENT_METHODS[card.type]||{label:card.type,icon:'💳'};
+      html+=`<div class="wallet-card" onclick="editCard('${card.id}')">
+        <div class="wallet-card-header">
+          <div class="wallet-card-icon" style="background:${card.color}22"><span style="font-size:18px">${typeLabel.icon}</span></div>
+          <div style="flex:1"><div class="wallet-card-name">${card.name}</div><div class="wallet-card-sub">${typeLabel.label}${card.closingDay?' · Fecha dia '+card.closingDay:''}</div></div>
+          <div style="text-align:right"><div style="font-size:16px;font-weight:700;color:var(--danger)">R$ ${spent.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:10px;color:var(--text2)">este mês</div></div>
+        </div>
+        ${card.limit?`<div class="limit-bar-wrap"><div class="limit-bar" style="width:${pct.toFixed(0)}%;background:${barColor}"></div></div>
+        <div class="limit-info"><span>Limite: R$ ${card.limit.toLocaleString('pt-BR')}</span><span class="limit-pct" style="color:${barColor}">${pct.toFixed(0)}% usado</span></div>`:''}
+      </div>`;
+    });
+  }
+  document.getElementById('wallets-content').innerHTML=html;
+}
+
+function editCard(id) { editingCardId=id; showScreen('screen-add-card'); openAddCard(id); }
+
+// ── HOME RENDER ──
+function renderHome() {
+  const year=state.currentYear, month=state.currentMonth;
+  const txs=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&d.getMonth()===month;});
+  const expenses=txs.filter(t=>t.type!=='income');
+  const incomes=txs.filter(t=>t.type==='income');
+  const totalExp=expenses.reduce((s,t)=>s+Number(t.amount),0);
+  const totalInc=incomes.reduce((s,t)=>s+Number(t.amount),0);
+  const balance=totalInc-totalExp;
+  const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const catTotals={};
+  expenses.forEach(t=>{catTotals[t.category]=(catTotals[t.category]||0)+Number(t.amount);});
+  const sortedCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const alerts=generateAlerts(year,month);
+
+  let html=`<div class="month-total">
+    <div class="month-label">Total de gastos</div>
+    <div class="month-amount">R$ ${totalExp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="month-sub">${txs.length} lançamentos · Receitas: R$ ${totalInc.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">◀</button>
+      <span>${monthNames[month]} ${year}</span>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" style="color:var(--danger)">R$ ${totalExp.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="stat-lbl">Gastos</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:${balance>=0?'var(--success)':'var(--danger)'}">R$ ${Math.abs(balance).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="stat-lbl">${balance>=0?'Saldo positivo':'Saldo negativo'}</div></div>
+  </div>`;
+
+  alerts.forEach(a=>{ html+=`<div class="alert ${a.type==='warn'?'warn':''}"><span style="font-size:16px">${a.icon}</span><div class="alert-text">${a.text}</div></div>`; });
+
+  if(sortedCats.length>0){
+    html+=`<div class="card"><div class="section-hdr"><div class="section-title">Por categoria</div><span class="see-all" onclick="showScreen('screen-charts')">Ver gráfico</span></div>`;
+    sortedCats.slice(0,4).forEach(([cat,val])=>{
+      const info=CATEGORIES[cat]||CATEGORIES.outros;
+      const pct=totalExp>0?(val/totalExp*100).toFixed(0):0;
+      html+=`<div class="cat-item"><div class="cat-dot" style="background:${info.color}"></div>
+        <div style="flex:1"><div class="cat-name">${info.icon} ${info.label}</div><div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct}%;background:${info.color}"></div></div></div>
+        <div style="text-align:right"><div class="cat-val">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="cat-pct">${pct}%</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  const recent=txs.slice(0,4);
+  if(recent.length>0){
+    html+=`<div class="section-hdr"><div class="section-title">Recentes</div><span class="see-all" onclick="showScreen('screen-transactions')">Ver todos</span></div>`;
+    recent.forEach(tx=>{html+=renderTxItem(tx);});
+  }
+
+  if(txs.length===0){
+    html+=`<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Nenhum lançamento este mês</div><div class="empty-sub">Toque + para adicionar</div></div>`;
+  }
+
+  document.getElementById('home-content').innerHTML=html;
+  updateDriveBadge();
+}
+
+function changeMonth(dir) {
+  state.currentMonth+=dir;
+  if(state.currentMonth>11){state.currentMonth=0;state.currentYear++;}
+  if(state.currentMonth<0){state.currentMonth=11;state.currentYear--;}
+  renderHome();
+}
+
+function renderTxItem(tx) {
+  const cat=CATEGORIES[tx.category]||CATEGORIES.outros;
+  const pay=tx.payment?PAYMENT_METHODS[tx.payment]:null;
+  const card=tx.cardId?state.cards.find(c=>c.id===tx.cardId):null;
+  const dateStr=new Date(tx.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+  return `<div class="tx-item">
+    <div class="tx-icon" style="background:${cat.color}22">${cat.icon}</div>
+    <div class="tx-info">
+      <div class="tx-desc">${tx.description}</div>
+      <div class="tx-meta">
+        <span>${cat.label} · ${dateStr}</span>
+        ${pay?`<span class="tx-pay-badge">${pay.icon} ${card?card.name:pay.label}</span>`:''}
+      </div>
+    </div>
+    <div class="tx-amount ${tx.type==='income'?'income':''}">${tx.type==='income'?'+':'-'}R$${Number(tx.amount).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+  </div>`;
+}
+
+// ── TRANSACTIONS ──
+function renderTransactions(query='') {
+  let txs=[...state.transactions];
+  if(query) txs=txs.filter(t=>t.description.toLowerCase().includes(query.toLowerCase())||(CATEGORIES[t.category]?.label||'').toLowerCase().includes(query.toLowerCase()));
+  if(!txs.length){document.getElementById('tx-list-content').innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum lançamento</div></div>`;return;}
+  const groups={};
+  txs.forEach(tx=>{if(!groups[tx.date])groups[tx.date]=[];groups[tx.date].push(tx);});
+  const sorted=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+  let html='';
+  sorted.forEach(date=>{
+    const d=new Date(date+'T12:00:00');
+    html+=`<div class="tx-date">${d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long'})}</div>`;
+    groups[date].forEach(tx=>{html+=renderTxItem(tx);});
+  });
+  document.getElementById('tx-list-content').innerHTML=html;
+}
+
+function filterTransactions(q){renderTransactions(q);}
+
+// ── ALERTS ──
+function generateAlerts(year,month) {
+  const alerts=[];
+  let pm=month-1,py=year; if(pm<0){pm=11;py--;}
+  const curr=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&d.getMonth()===month&&t.type!=='income';});
+  const prev=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===py&&d.getMonth()===pm&&t.type!=='income';});
+  if(prev.length&&curr.length){
+    const cT=curr.reduce((s,t)=>s+Number(t.amount),0);
+    const pT=prev.reduce((s,t)=>s+Number(t.amount),0);
+    const diff=((cT-pT)/pT*100).toFixed(0);
+    if(diff>20)alerts.push({type:'danger',icon:'📈',text:`Gastos ${diff}% maiores que o mês anterior.`});
+    const cC={},pC={};
+    curr.forEach(t=>cC[t.category]=(cC[t.category]||0)+Number(t.amount));
+    prev.forEach(t=>pC[t.category]=(pC[t.category]||0)+Number(t.amount));
+    Object.entries(cC).forEach(([cat,val])=>{
+      if(pC[cat]&&val>pC[cat]*1.5){
+        const info=CATEGORIES[cat]||CATEGORIES.outros;
+        alerts.push({type:'warn',icon:'⚠️',text:`${info.label}: gasto ${((val/pC[cat]-1)*100).toFixed(0)}% maior que mês passado.`});
+      }
+    });
+    // Card limit alerts
+    state.cards.filter(c=>c.limit).forEach(card=>{
+      const spent=curr.filter(t=>t.cardId===card.id).reduce((s,t)=>s+Number(t.amount),0);
+      const pct=spent/card.limit*100;
+      if(pct>85)alerts.push({type:'danger',icon:'💳',text:`${card.name}: ${pct.toFixed(0)}% do limite usado este mês.`});
+    });
+  }
+  return alerts.slice(0,3);
+}
+
+// ── CHARTS ──
+function renderCharts() {
+  const year=state.currentYear,month=state.currentMonth;
+  const txs=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&d.getMonth()===month&&t.type!=='income';});
+  const catTotals={},payTotals={};
+  txs.forEach(t=>{
+    catTotals[t.category]=(catTotals[t.category]||0)+Number(t.amount);
+    const pk=t.payment||'outros';
+    payTotals[pk]=(payTotals[pk]||0)+Number(t.amount);
+  });
+  const sortedCat=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const sortedPay=Object.entries(payTotals).sort((a,b)=>b[1]-a[1]);
+  const totalCat=sortedCat.reduce((s,[,v])=>s+v,0);
+  const totalPay=sortedPay.reduce((s,[,v])=>s+v,0);
+  const monthNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const trend=[],trendLabels=[];
+  for(let i=5;i>=0;i--){
+    let m=month-i,y=year; if(m<0){m+=12;y--;}
+    const total=state.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m&&t.type!=='income';}).reduce((s,t)=>s+Number(t.amount),0);
+    trend.push(total); trendLabels.push(monthNames[m]);
+  }
+
+  const catLegend=sortedCat.slice(0,5).map(([cat,val])=>{
+    const info=CATEGORIES[cat]||CATEGORIES.outros;
+    const pct=totalCat>0?(val/totalCat*100).toFixed(0):0;
+    return `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)"><span style="width:8px;height:8px;border-radius:50%;background:${info.color};flex-shrink:0"></span>${info.icon} ${pct}%</span>`;
+  }).join('');
+
+  const payLegend=sortedPay.map(([k,val])=>{
+    const pm=PAYMENT_METHODS[k]||{label:k,icon:'💰'};
+    const pct=totalPay>0?(val/totalPay*100).toFixed(0):0;
+    return `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>${pm.icon} ${pct}%</span>`;
+  }).join('');
+
+  document.getElementById('charts-content').innerHTML=`
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title" style="margin-bottom:10px">Categorias este mês</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">${catLegend}</div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="chart-pie" role="img" aria-label="Gastos por categoria">Gastos por categoria</canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="section-title" style="margin-bottom:10px">Por forma de pagamento</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">${payLegend}</div>
+    <div style="position:relative;width:100%;height:200px"><canvas id="chart-pay" role="img" aria-label="Gastos por forma de pagamento">Por forma de pagamento</canvas></div>
+  </div>
+  <div class="card">
+    <div class="section-title" style="margin-bottom:10px">Evolução 6 meses</div>
+    <div style="position:relative;width:100%;height:190px"><canvas id="chart-line" role="img" aria-label="Evolução de gastos">Evolução</canvas></div>
+  </div>`;
+
+  setTimeout(()=>{
+    if(charts.pie)charts.pie.destroy();
+    charts.pie=new Chart(document.getElementById('chart-pie'),{
+      type:'doughnut',
+      data:{labels:sortedCat.map(([c])=>CATEGORIES[c]?.label||c),datasets:[{data:sortedCat.map(([,v])=>v),backgroundColor:sortedCat.map(([c])=>CATEGORIES[c]?.color||'#888'),borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}
+    });
+    if(charts.pay)charts.pay.destroy();
+    const payColors=['#C3986B','#818CF8','#34D399','#F87171','#FBBF24'];
+    charts.pay=new Chart(document.getElementById('chart-pay'),{
+      type:'bar',
+      data:{labels:sortedPay.map(([k])=>PAYMENT_METHODS[k]?.label||k),datasets:[{data:sortedPay.map(([,v])=>v),backgroundColor:payColors,borderRadius:6,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9B99B0',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9B99B0',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'}}}}
+    });
+    if(charts.line)charts.line.destroy();
+    charts.line=new Chart(document.getElementById('chart-line'),{
+      type:'line',
+      data:{labels:trendLabels,datasets:[{label:'Gastos',data:trend,borderColor:'#C3986B',backgroundColor:'rgba(195,152,107,0.08)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#C3986B'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9B99B0',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9B99B0',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'}}}}
+    });
+  },100);
+}
+
+// ── INSIGHTS ──
+function renderInsightsList() {
+  const saved=JSON.parse(localStorage.getItem('financetrack_insights')||'[]');
+  const el=document.getElementById('insights-list');
+  el.innerHTML=saved.length?saved.map(i=>`<div class="insight"><div class="insight-title">${i.title}</div><div class="insight-text">${i.text}</div></div>`).join(''):`<div class="empty" style="margin-bottom:14px"><div class="empty-icon">🤖</div><div class="empty-title">Sem insights ainda</div><div class="empty-sub">Gere uma análise dos seus gastos</div></div>`;
+}
+
+async function generateInsights() {
+  if(!state.apiKey){toast('⚠️ Configure a chave API');showScreen('screen-settings');return;}
+  if(state.transactions.length<3){toast('⚠️ Adicione mais lançamentos primeiro');return;}
+  document.getElementById('insights-loading').style.display='block';
+  document.getElementById('insights-list').innerHTML='';
+  const catSummary={}; const paySummary={};
+  state.transactions.filter(t=>t.type!=='income').forEach(t=>{
+    catSummary[t.category]=(catSummary[t.category]||0)+Number(t.amount);
+    const pk=t.payment||'outros';
+    paySummary[pk]=(paySummary[pk]||0)+Number(t.amount);
+  });
+  const summary={total:state.transactions.length,categories:catSummary,payments:paySummary};
+  try {
+    const data=await callClaude(`Analise dados financeiros pessoais e gere 4 insights práticos em português. Dados: ${JSON.stringify(summary)}. Retorne SOMENTE JSON array: [{title,text}].`,1000);
+    const m=data.content[0].text.match(/\[[\s\S]*\]/);
+    if(!m)throw new Error('Resposta inválida');
+    localStorage.setItem('financetrack_insights',JSON.stringify(JSON.parse(m[0])));
+    document.getElementById('insights-loading').style.display='none';
+    renderInsightsList();
+  } catch(e){
+    document.getElementById('insights-loading').style.display='none';
+    toast('❌ Erro: '+e.message);
+  }
+}
+
+// ── SETTINGS ──
+function saveApiKey() {
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){toast('⚠️ Informe a chave');return;}
+  state.apiKey=k; saveLocal(); toast('✅ Chave API salva!');
+}
+
+function updateSettingsUI() {
+  const el=document.getElementById('api-key-input');
+  if(el&&state.apiKey)el.value=state.apiKey;
+  updateDriveSettingsUI();
+}
+
+function updateDriveBadge() {
+  const el=document.getElementById('drive-status-badge');
+  if(!el)return;
+  el.innerHTML=state.driveConnected?`<span class="drive-badge connected">☁️ Drive sincronizado</span>`:`<span class="drive-badge disconnected">Drive desconectado</span>`;
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify({transactions:state.transactions,cards:state.cards},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='financetrack_export.json';a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearData() {
+  if(!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.'))return;
+  state.transactions=[];state.cards=[];saveLocal();
+  localStorage.removeItem('financetrack_insights');
+  toast('🗑️ Dados apagados'); renderHome();
+}
+
+// ── GOOGLE DRIVE ──
+const DRIVE_CLIENT_ID='369149999146-u0dqjr3moole32espmddi5ea52l8r4qd.apps.googleusercontent.com';
+const DRIVE_FILE_NAME='financetrack_v2.json';
+
+function updateDriveSettingsUI() {
+  const badge=document.getElementById('drive-settings-status');
+  const btn=document.getElementById('btn-drive-connect');
+  if(!badge||!btn)return;
+  badge.innerHTML=state.driveConnected?`<span class="drive-badge connected">✅ Google Drive conectado</span>`:`<span class="drive-badge disconnected">Não conectado</span>`;
+  btn.textContent=state.driveConnected?'Desconectar Drive':'☁️ Conectar Google Drive';
+}
+
+function toggleDriveAuth() {
+  if(state.driveConnected){state.driveConnected=false;state.driveFileId=null;saveLocal();updateDriveSettingsUI();updateDriveBadge();toast('Drive desconectado');}
+  else{if(!DRIVE_CLIENT_ID){toast('⚠️ Configure o Client ID do Google no código');return;}initDrive();}
+}
+
+function initDrive() {
+  gapi.load('client:auth2',async()=>{
+    try{
+      await gapi.client.init({clientId:DRIVE_CLIENT_ID,scope:'https://www.googleapis.com/auth/drive.appdata'});
+      const auth=gapi.auth2.getAuthInstance();
+      if(!auth.isSignedIn.get())await auth.signIn();
+      state.driveConnected=true;saveLocal();updateDriveSettingsUI();updateDriveBadge();toast('✅ Drive conectado!');loadFromDrive();
+    }catch(e){toast('❌ Erro ao conectar Drive');}
+  });
+}
+
+async function syncToDrive() {
+  if(!state.driveConnected||!window.gapi)return;
+  try{
+    const content=JSON.stringify({transactions:state.transactions,cards:state.cards});
+    if(state.driveFileId){
+      await gapi.client.request({path:`/upload/drive/v3/files/${state.driveFileId}`,method:'PATCH',params:{uploadType:'media'},body:content});
+    }else{
+      const res=await gapi.client.request({path:'/drive/v3/files',method:'POST',params:{uploadType:'multipart'},headers:{'Content-Type':'multipart/related; boundary=foo'},body:`--foo\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:DRIVE_FILE_NAME,parents:['appDataFolder']})}\r\n--foo\r\nContent-Type: application/json\r\n\r\n${content}\r\n--foo--`});
+      state.driveFileId=JSON.parse(res.body).id;saveLocal();
+    }
+  }catch(e){console.warn('Drive sync failed',e);}
+}
+
+async function loadFromDrive() {
+  if(!state.driveConnected||!window.gapi)return;
+  try{
+    const list=await gapi.client.request({path:'/drive/v3/files',params:{spaces:'appDataFolder',q:`name='${DRIVE_FILE_NAME}'`,fields:'files(id)'}});
+    const files=JSON.parse(list.body).files;
+    if(!files.length)return;
+    state.driveFileId=files[0].id;
+    const file=await gapi.client.request({path:`/drive/v3/files/${state.driveFileId}`,params:{alt:'media'}});
+    const data=JSON.parse(file.body);
+    if(data.transactions)state.transactions=data.transactions;
+    if(data.cards)state.cards=data.cards;
+    saveLocal();renderHome();
+  }catch(e){console.warn('Drive load failed',e);}
+}
+
+init();
+</script>
+</body>
+</html>
